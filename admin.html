@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>책장 관리 · QR 만들기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@400;700;900&display=swap">
+<style>
+:root{--ink:#14213D;--ink-2:#1E2F55;--ink-3:#2A3F6B;--cream:#FFF6E8;--cream-dim:#C9CEDD;
+--marigold:#FFB703;--mint:#54D6A0;--rose:#FF6B6B;
+--fd:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+--fb:'Nunito','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--fb);font-size:15px}
+.wrap{max-width:900px;margin:0 auto;padding:24px 18px 60px}
+h1{font-family:var(--fd);font-weight:400;font-size:26px;margin:0 0 6px}
+h2{font-family:var(--fd);font-weight:400;font-size:19px;margin:34px 0 10px}
+p.lead{margin:0 0 26px;color:var(--cream-dim);line-height:1.6}
+.panel{background:var(--ink-2);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+label{font-size:13px;color:var(--cream-dim);font-weight:700;display:block;margin-bottom:5px}
+input,textarea{width:100%;background:var(--ink);color:var(--cream);border:2px solid var(--ink-3);
+border-radius:12px;padding:11px 13px;font-family:var(--fb);font-size:15px}
+textarea{min-height:120px;resize:vertical;line-height:1.6}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 180px;min-width:0}
+.row .narrow{flex:0 0 92px}
+button{border:none;border-radius:12px;padding:11px 18px;font-family:var(--fb);font-weight:800;
+font-size:15px;cursor:pointer;background:var(--marigold);color:var(--ink)}
+button.ghost{background:transparent;color:var(--cream-dim);border:2px solid var(--ink-3)}
+button.danger{background:transparent;color:var(--rose);border:2px solid var(--ink-3);padding:7px 12px;font-size:13px}
+.hint{font-size:12.5px;color:#8793AF;line-height:1.6;margin:0}
+.msg{font-size:13.5px;color:var(--mint);min-height:18px;margin:0}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--ink-3);vertical-align:middle}
+th{font-size:12px;color:var(--cream-dim)}
+td.v{font-family:monospace;font-size:12px;color:var(--cream-dim)}
+.count{color:var(--marigold);font-weight:900}
+#sheet{display:none}
+.qcard{border:1.5px dashed #999;border-radius:10px;padding:8px;display:flex;flex-direction:column;
+align-items:center;gap:6px;break-inside:avoid;page-break-inside:avoid;background:#fff;color:#111}
+.qcard .qr{width:100%;display:flex;justify-content:center}
+.qcard .qr img,.qcard .qr canvas{width:100%;height:auto;max-width:140px}
+.qcard b{font-family:var(--fd);font-weight:400;font-size:11.5px;text-align:center;line-height:1.25;word-break:keep-all}
+@media print{body{background:#fff;color:#111}.wrap{display:none}
+#sheet{display:grid!important;grid-template-columns:repeat(3,1fr);gap:7mm;padding:10mm}
+@page{size:A4;margin:8mm}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>책장 관리</h1>
+<p class="lead">유튜브 주소를 넣으면 QR이 만들어집니다.</p>
+
+<div class="panel">
+<div><label for="base">재생 페이지 주소</label><input id="base"></div>
+<p class="hint">index.html 이 있는 폴더 주소입니다.</p>
+</div>
+
+<h2>한 권 더하기</h2>
+<div class="panel">
+<div class="row">
+<div><label for="ti">제목</label><input id="ti" placeholder="The Legend of Rock Paper Scissors"></div>
+<div class="narrow"><label for="em">그림</label><input id="em" value="📘" maxlength="4"></div>
+</div>
+<div><label for="url">유튜브 주소</label><input id="url" placeholder="https://youtu.be/..."></div>
+<div class="row"><button id="add">책장에 넣기</button></div>
+<p class="msg" id="msg1"></p>
+</div>
+
+<h2>여러 권 한번에</h2>
+<div class="panel">
+<label for="bulk">한 줄에 한 권 — 제목 | 유튜브주소 | 그림</label>
+<textarea id="bulk" placeholder="Hot Dog 4 | https://youtu.be/XXXXXXXXXXX | 🌭"></textarea>
+<div class="row"><button id="addBulk">한번에 넣기</button></div>
+<p class="msg" id="msg2"></p>
+</div>
+
+<h2>책장 (<span class="count" id="n">0</span>권)</h2>
+<div class="panel">
+<div class="row">
+<button id="print">QR 인쇄하기</button>
+<button class="ghost" id="copy">tracks.json 복사</button>
+</div>
+<p class="hint"><b>복사한 내용을 GitHub의 tracks.json 에 덮어써야</b> 아이 폰에 반영됩니다.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>그림</th><th>제목</th><th>ID</th><th></th></tr></thead>
+<tbody id="rows"></tbody></table></div>
+<p class="msg" id="msg3"></p>
+</div>
+</div>
+<div id="sheet"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+"use strict";
+var KEY='qrp.tracks',BKEY='qrp.base',tracks=[];
+function $(i){return document.getElementById(i);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(tracks));
+localStorage.setItem(BKEY,$('base').value.trim());}catch(e){}}
+function parseVid(s){s=String(s||'').trim();
+var m=s.match(/[?&]v=([A-Za-z0-9_-]{11})/)||s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/)
+||s.match(/\/embed\/([A-Za-z0-9_-]{11})/)||s.match(/\/shorts\/([A-Za-z0-9_-]{11})/)
+||s.match(/\/live\/([A-Za-z0-9_-]{11})/)||s.match(/^([A-Za-z0-9_-]{11})$/);return m?m[1]:null;}
+function newId(){var c='abcdefghjkmnpqrstuvwxyz23456789',o;
+do{o='';for(var i=0;i<5;i++)o+=c[Math.floor(Math.random()*c.length)];}
+while(tracks.some(function(t){return t.id===o;}));return o;}
+function baseUrl(){var b=$('base').value.trim();
+if(b&&b.slice(-1)!=='/'&&!/\.html$/i.test(b))b+='/';return b;}
+function addOne(ti,url,em){ti=String(ti||'').trim();var v=parseVid(url);
+if(!ti)return '제목이 없습니다';
+if(!v)return '주소를 못 읽었습니다: '+String(url||'').slice(0,30);
+if(tracks.some(function(t){return t.vid===v;}))return '이미 있습니다: '+ti;
+tracks.push({id:newId(),title:ti,vid:v,emoji:(em||'📘').trim()||'📘'});return null;}
+function render(){$('n').textContent=tracks.length;
+$('rows').innerHTML=tracks.map(function(t,i){
+return '<tr><td style="font-size:20px">'+esc(t.emoji)+'</td><td>'+esc(t.title)+
+'</td><td class="v">'+esc(t.vid)+'</td><td><button class="danger" data-i="'+i+'">지우기</button></td></tr>';}).join('');
+Array.prototype.forEach.call(document.querySelectorAll('.danger'),function(b){
+b.onclick=function(){tracks.splice(+b.dataset.i,1);save();render();};});}
+
+$('add').onclick=function(){var e=addOne($('ti').value,$('url').value,$('em').value);
+var m=$('msg1');if(e){m.style.color='#FF6B6B';m.textContent=e;return;}
+m.style.color='#54D6A0';m.textContent='넣었습니다.';$('ti').value='';$('url').value='';save();render();};
+
+$('addBulk').onclick=function(){var ok=0,bad=[];
+$('bulk').value.split('\n').forEach(function(l){if(!l.trim())return;
+var p=l.split('|');var e=addOne(p[0],p[1],p[2]);if(e)bad.push(e);else ok++;});
+var m=$('msg2');m.style.color=bad.length?'#FFB703':'#54D6A0';
+m.textContent=ok+'권 넣었습니다.'+(bad.length?' 건너뜀 '+bad.length+'줄: '+bad[0]:'');
+if(ok)$('bulk').value='';save();render();};
+
+$('base').onchange=save;
+
+$('copy').onclick=function(){
+var txt=JSON.stringify({v:1,tracks:tracks},null,2);
+var m=$('msg3');
+if(navigator.clipboard&&navigator.clipboard.writeText){
+navigator.clipboard.writeText(txt).then(function(){
+m.style.color='#54D6A0';m.textContent='복사했습니다. GitHub의 tracks.json 에 붙여넣으세요.';},
+function(){showText(txt);});}else showText(txt);};
+function showText(txt){var m=$('msg3');m.style.color='#FFB703';
+m.textContent='복사가 안 됩니다. 아래 내용을 직접 선택해 복사하세요.';
+var ta=document.createElement('textarea');ta.value=txt;ta.style.minHeight='200px';
+ta.style.marginTop='10px';m.parentNode.appendChild(ta);ta.select();}
+
+$('print').onclick=function(){
+if(!tracks.length){$('msg3').textContent='책장이 비어 있습니다.';return;}
+if(!baseUrl()){$('msg3').textContent='재생 페이지 주소를 먼저 넣어 주세요.';return;}
+var sh=$('sheet');sh.innerHTML='';
+tracks.forEach(function(t){
+var c=document.createElement('div');c.className='qcard';
+var q=document.createElement('div');q.className='qr';
+var b=document.createElement('b');b.textContent=(t.emoji?t.emoji+' ':'')+t.title;
+c.appendChild(q);c.appendChild(b);sh.appendChild(c);
+new QRCode(q,{text:baseUrl()+'#t='+t.id,width:280,height:280,correctLevel:QRCode.CorrectLevel.M});});
+setTimeout(function(){window.print();},500);};
+
+try{var r=localStorage.getItem(KEY);if(r)tracks=JSON.parse(r)||[];}catch(e){}
+try{var b=localStorage.getItem(BKEY);if(b)$('base').value=b;}catch(e){}
+if(!$('base').value)$('base').value=location.href.replace(/admin\.html.*$/,'');
+render();
+})();
+</script>
+</body>
+</html>
