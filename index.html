@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14213D">
+<title>우리집 오디오 책장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@400;700;900&display=swap">
+<style>
+:root{
+  --ink:#14213D; --ink-2:#1E2F55; --ink-3:#2A3F6B;
+  --cream:#FFF6E8; --cream-dim:#C9CEDD;
+  --marigold:#FFB703; --marigold-dk:#E89B00; --mint:#54D6A0;
+  --font-display:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font-body:'Nunito','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0; background:var(--ink); color:var(--cream);
+  font-family:var(--font-body); font-size:16px; -webkit-tap-highlight-color:transparent; overscroll-behavior:none}
+.wrap{min-height:100%; display:flex; flex-direction:column;
+  padding-left:max(18px, env(safe-area-inset-left,0px));
+  padding-right:max(18px, env(safe-area-inset-right,0px));
+  padding-block:22px 28px; max-width:760px; margin:0 auto}
+h1,h2{font-family:var(--font-display); font-weight:400}
+.bar{display:flex; align-items:center; gap:12px; margin-bottom:20px}
+.bar .home{width:46px; height:46px; flex:none; border:none; border-radius:16px;
+  background:var(--ink-2); color:var(--cream); font-size:22px; cursor:pointer}
+.bar h1{font-size:20px; margin:0; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.stage{position:relative; width:100%; aspect-ratio:16/9; max-width:100%;
+  border-radius:22px; overflow:hidden; background:#000; box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.stage iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
+.shield{position:absolute; inset:0; background:transparent; cursor:pointer}
+.done{position:absolute; inset:0; display:none; flex-direction:column; align-items:center;
+  justify-content:center; gap:10px; background:var(--ink-2); text-align:center; padding:16px}
+.done.on{display:flex}
+.done .tick{width:74px; height:74px; border-radius:50%; background:var(--mint); color:var(--ink);
+  display:grid; place-items:center; font-size:40px; font-weight:900}
+.done p{margin:0; font-family:var(--font-display); font-size:24px}
+.title-big{font-family:var(--font-display); font-size:clamp(22px,6vw,30px);
+  margin:22px 0 4px; text-wrap:balance; line-height:1.25}
+.sub{margin:0; color:var(--cream-dim); font-size:14px; font-variant-numeric:tabular-nums}
+.prog{margin-top:18px; height:12px; border-radius:99px; background:var(--ink-3); overflow:hidden}
+.prog i{display:block; height:100%; width:0; background:var(--marigold); border-radius:99px; transition:width .25s linear}
+.times{display:flex; justify-content:space-between; margin-top:8px; font-size:13px;
+  color:var(--cream-dim); font-variant-numeric:tabular-nums}
+.transport{display:flex; align-items:center; justify-content:center; gap:22px; margin-top:26px}
+.tbtn{border:none; background:var(--ink-2); color:var(--cream); border-radius:22px; width:68px; height:68px;
+  font-size:13px; font-weight:700; cursor:pointer; display:grid; place-items:center; gap:2px; line-height:1.1}
+.tbtn span{display:block; font-size:21px}
+.tbtn:active,.card:active{transform:scale(.95)}
+.play{width:104px; height:104px; border-radius:50%; background:var(--marigold); color:var(--ink); font-size:44px}
+.again{margin:26px auto 0; display:block; border:2px solid var(--ink-3); background:transparent;
+  color:var(--cream-dim); border-radius:99px; padding:12px 26px; font-family:var(--font-body);
+  font-weight:700; font-size:15px; cursor:pointer}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px}
+.card{display:flex; flex-direction:column; gap:10px; text-decoration:none; color:inherit;
+  background:var(--ink-2); border-radius:20px; padding:16px; min-width:0}
+.card .chip{width:48px; height:48px; border-radius:15px; display:grid; place-items:center; font-size:26px; background:var(--marigold)}
+.card b{font-family:var(--font-display); font-weight:400; font-size:16px; line-height:1.3; word-break:keep-all}
+.empty{margin-top:40px; text-align:center; color:var(--cream-dim); line-height:1.7}
+.empty b{display:block; font-family:var(--font-display); font-size:22px; color:var(--cream); margin-bottom:8px}
+.foot{margin-top:auto; padding-top:32px; text-align:center; color:#6B7899; font-size:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+:focus-visible{outline:3px solid var(--marigold); outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function(){
+  "use strict";
+  var app=document.getElementById('app'), TRACKS=[], player=null, cur=null, tick=null, ended=false;
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function mmss(t){t=Math.max(0,Math.floor(t||0));var m=Math.floor(t/60),s=t%60;return m+':'+(s<10?'0':'')+s;}
+  function byId(id){for(var i=0;i<TRACKS.length;i++)if(TRACKS[i].id===id)return TRACKS[i];return null;}
+  function hashId(){var m=(location.hash||'').match(/^#t=([A-Za-z0-9_-]+)$/);return m?m[1]:null;}
+
+  function renderLibrary(){
+    stopPlayer();
+    var items=TRACKS.map(function(t){
+      return '<a class="card" href="#t='+esc(t.id)+'"><span class="chip">'+esc(t.emoji||'📘')+
+             '</span><b>'+esc(t.title)+'</b></a>';}).join('');
+    app.innerHTML='<div class="bar"><h1>우리집 오디오 책장</h1></div>'+
+      (TRACKS.length?'<div class="grid">'+items+'</div>':
+       '<div class="empty"><b>아직 책이 없어요</b>tracks.json 에 책을 더해 주세요.</div>')+
+      '<div class="foot">QR을 찍으면 그 책 하나만 들려요</div>';
+  }
+
+  function renderPlayer(t){
+    cur=t; ended=false;
+    app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>'+
+      esc(t.emoji||'📘')+' 듣는 중</h1></div>'+
+      '<div class="stage"><div id="yt"></div><div class="shield" id="shield"></div>'+
+      '<div class="done" id="done"><div class="tick">✓</div><p>다 들었어요!</p></div></div>'+
+      '<h2 class="title-big">'+esc(t.title)+'</h2><p class="sub" id="state">준비 중…</p>'+
+      '<div class="prog"><i id="bar"></i></div>'+
+      '<div class="times"><span id="now">0:00</span><span id="tot">0:00</span></div>'+
+      '<div class="transport"><button class="tbtn" id="back"><span>↺</span>15초</button>'+
+      '<button class="play" id="play">▶</button>'+
+      '<button class="tbtn" id="fwd"><span>↻</span>15초</button></div>'+
+      '<button class="again" id="again">처음부터 다시 듣기</button>'+
+      '<div class="foot">끝나면 저절로 멈춰요</div>';
+    document.getElementById('home').onclick=function(){location.hash='';};
+    document.getElementById('play').onclick=togglePlay;
+    document.getElementById('shield').onclick=togglePlay;
+    document.getElementById('back').onclick=function(){seekBy(-15);};
+    document.getElementById('fwd').onclick=function(){seekBy(15);};
+    document.getElementById('again').onclick=restart;
+    buildYT(t.vid);
+  }
+
+  function buildYT(vid){
+    stopPlayer();
+    if(!window.YT||!window.YT.Player){window.__pv=vid;return;}
+    player=new YT.Player('yt',{videoId:vid,
+      playerVars:{rel:0,modestbranding:1,playsinline:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,autoplay:0},
+      events:{
+        onReady:function(){setState('눌러서 들어요');
+          var o=document.getElementById('tot'); if(o)o.textContent=mmss(player.getDuration());},
+        onStateChange:onState,
+        onError:function(){setState('이 음원은 지금 들을 수 없어요');}
+      }});
+  }
+
+  function onState(e){
+    var P=window.YT.PlayerState;
+    if(e.data===P.ENDED){finish();return;}
+    if(e.data===P.PLAYING){ended=false;hideDone();setIcon('❚❚');setState('재생 중');
+      var o=document.getElementById('tot'); if(o)o.textContent=mmss(player.getDuration()); startTick();}
+    if(e.data===P.PAUSED){setIcon('▶');setState('잠깐 멈춤');stopTick();}
+    if(e.data===P.BUFFERING){setState('불러오는 중…');}
+  }
+  function finish(){ended=true;stopTick();try{player.stopVideo();}catch(x){}
+    var d=document.getElementById('done');if(d)d.classList.add('on');
+    setIcon('▶');setState('다 들었어요');
+    var b=document.getElementById('bar');if(b)b.style.width='100%';}
+  function hideDone(){var d=document.getElementById('done');if(d)d.classList.remove('on');}
+  function togglePlay(){if(!player||!player.getPlayerState)return;
+    if(ended){restart();return;}
+    if(player.getPlayerState()===YT.PlayerState.PLAYING)player.pauseVideo();else player.playVideo();}
+  function restart(){if(!player)return;ended=false;hideDone();
+    try{player.seekTo(0,true);player.playVideo();}catch(x){}}
+  function seekBy(s){if(!player||!player.getCurrentTime||ended)return;
+    player.seekTo(Math.max(0,player.getCurrentTime()+s),true);}
+  function setIcon(c){var b=document.getElementById('play');if(b)b.textContent=c;}
+  function setState(t){var s=document.getElementById('state');if(s)s.textContent=t;}
+  function startTick(){stopTick();tick=setInterval(function(){
+    if(!player||!player.getCurrentTime)return;
+    var c=player.getCurrentTime(),d=player.getDuration()||0;
+    var b=document.getElementById('bar'),n=document.getElementById('now');
+    if(b&&d)b.style.width=Math.min(100,(c/d)*100)+'%';
+    if(n)n.textContent=mmss(c);
+    if(d&&c>=d-0.4&&!ended)finish();},500);}
+  function stopTick(){if(tick){clearInterval(tick);tick=null;}}
+  function stopPlayer(){stopTick();if(player&&player.destroy){try{player.destroy();}catch(x){}}player=null;}
+
+  function route(){
+    var id=hashId();
+    if(id){var t=byId(id);
+      if(t){renderPlayer(t);return;}
+      app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>못 찾았어요</h1></div>'+
+        '<div class="empty"><b>이 QR에 맞는 책이 없어요</b>어른에게 보여 주세요.</div>';
+      document.getElementById('home').onclick=function(){location.hash='';};return;}
+    renderLibrary();
+  }
+  window.onYouTubeIframeAPIReady=function(){if(window.__pv){var v=window.__pv;window.__pv=null;buildYT(v);}};
+  window.addEventListener('hashchange',route);
+  fetch('tracks.json?v='+Date.now()).then(function(r){return r.ok?r.json():{tracks:[]};})
+    .then(function(d){TRACKS=(d&&d.tracks)||[];route();})
+    .catch(function(){TRACKS=[];route();});
+})();
+</script>
+</body>
+</html>
