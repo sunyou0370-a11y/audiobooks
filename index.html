@@ -74,28 +74,36 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
 return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function mmss(t){t=Math.max(0,Math.floor(t||0));var m=Math.floor(t/60),s=t%60;return m+':'+(s<10?'0':'')+s;}
 function byId(id){for(var i=0;i<TRACKS.length;i++)if(TRACKS[i].id===id)return TRACKS[i];return null;}
-function hashId(){var m=(location.hash||'').match(/^#t=([A-Za-z0-9_-]+)$/);return m?m[1]:null;}
 function $(i){return document.getElementById(i);}
 
-function renderLibrary(){
-  stopAll();
+function parseHash(){
+  var h=(location.hash||'').replace(/^#/,''); if(!h) return null;
+  var out={}; h.split('&').forEach(function(p){
+    var k=p.split('='); if(k.length<2) return;
+    try{out[k[0]]=decodeURIComponent(k.slice(1).join('='));}catch(e){out[k[0]]=k.slice(1).join('=');}});
+  if(out.v&&/^[A-Za-z0-9_-]{11}$/.test(out.v))
+    return {id:'v-'+out.v,title:out.n||'책',vid:out.v,emoji:out.e||'📘'};
+  if(out.t) return byId(out.t)||{missing:true};
+  var m=h.match(/^t=([A-Za-z0-9_-]+)$/); if(m) return byId(m[1])||{missing:true};
+  return {missing:true};
+}
+
+function renderLibrary(){ stopAll();
   var items=TRACKS.map(function(t){
     return '<a class="card" href="#t='+esc(t.id)+'"><span class="chip">'+esc(t.emoji||'📘')+
            '</span><b>'+esc(t.title)+'</b></a>';}).join('');
   app.innerHTML='<div class="bar"><h1>우리집 오디오 책장</h1></div>'+
     (TRACKS.length?'<div class="grid">'+items+'</div>':
-     '<div class="empty"><b>아직 책이 없어요</b>tracks.json 에 책을 더해 주세요.</div>')+
-    '<div class="foot">QR을 찍으면 그 책 하나만 들려요</div>';
-}
+     '<div class="empty"><b>아직 책이 없어요</b>QR을 찍으면 바로 들을 수 있어요.</div>')+
+    '<div class="foot">QR을 찍으면 그 책 하나만 들려요</div>'; }
 
 function renderPlayer(t){
-  ended=false; mode = t.file ? 'mp3' : 'yt';
+  ended=false; mode=t.file?'mp3':'yt';
   var stage = mode==='mp3'
-    ? '<div class="stage cover">'+esc(t.emoji||'🎧')+'</div>'
+    ? '<div class="stage"><div class="cover" style="position:absolute;inset:0">'+esc(t.emoji||'🎧')+
+      '</div><div class="done" id="done"><div class="tick">✓</div><p>다 들었어요!</p></div></div>'
     : '<div class="stage"><div id="yt"></div><div class="shield" id="shield"></div>'+
       '<div class="done" id="done"><div class="tick">✓</div><p>다 들었어요!</p></div></div>';
-  if(mode==='mp3') stage='<div class="stage"><div class="cover" style="position:absolute;inset:0">'+
-    esc(t.emoji||'🎧')+'</div><div class="done" id="done"><div class="tick">✓</div><p>다 들었어요!</p></div></div>';
   app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>'+
     esc(t.emoji||'📘')+' 듣는 중</h1></div>'+stage+
     '<h2 class="title-big">'+esc(t.title)+'</h2><p class="sub" id="state">준비 중…</p>'+
@@ -112,37 +120,32 @@ function renderPlayer(t){
   $('back').onclick=function(){seekBy(-15);};
   $('fwd').onclick=function(){seekBy(15);};
   $('again').onclick=restart;
-  if(mode==='mp3') buildAudio(t.file); else buildYT(t.vid);
+  if(mode==='mp3')buildAudio(t.file); else buildYT(t.vid);
 }
 
-function buildAudio(src){
-  stopAll();
-  au=new Audio(src); au.preload='metadata';
+function buildAudio(src){ stopAll(); au=new Audio(src); au.preload='metadata';
   au.addEventListener('loadedmetadata',function(){setState('눌러서 들어요');
-    var o=$('tot'); if(o)o.textContent=mmss(au.duration);});
+    var o=$('tot');if(o)o.textContent=mmss(au.duration);});
   au.addEventListener('playing',function(){ended=false;hideDone();setIcon('❚❚');setState('재생 중');startTick();});
   au.addEventListener('pause',function(){if(!ended){setIcon('▶');setState('잠깐 멈춤');}stopTick();});
   au.addEventListener('waiting',function(){setState('불러오는 중…');});
   au.addEventListener('ended',finish);
-  au.addEventListener('error',function(){setState('이 음원을 찾을 수 없어요');});
-}
+  au.addEventListener('error',function(){setState('이 음원을 찾을 수 없어요');}); }
 
-function buildYT(vid){
-  stopAll();
+function buildYT(vid){ stopAll();
   if(!window.YT||!window.YT.Player){window.__pv=vid;return;}
   yt=new YT.Player('yt',{videoId:vid,
     playerVars:{rel:0,modestbranding:1,playsinline:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,autoplay:0},
     events:{onReady:function(){setState('눌러서 들어요');
-      var o=$('tot'); if(o)o.textContent=mmss(yt.getDuration());},
-      onStateChange:onState,
-      onError:function(){setState('이 음원은 지금 들을 수 없어요');}}});
-}
+      var o=$('tot');if(o)o.textContent=mmss(yt.getDuration());},
+      onStateChange:onState,onError:function(){setState('이 음원은 지금 들을 수 없어요');}}}); }
+
 function onState(e){var P=window.YT.PlayerState;
   if(e.data===P.ENDED){finish();return;}
   if(e.data===P.PLAYING){ended=false;hideDone();setIcon('❚❚');setState('재생 중');
-    var o=$('tot'); if(o)o.textContent=mmss(yt.getDuration());startTick();}
+    var o=$('tot');if(o)o.textContent=mmss(yt.getDuration());startTick();}
   if(e.data===P.PAUSED){setIcon('▶');setState('잠깐 멈춤');stopTick();}
-  if(e.data===P.BUFFERING){setState('불러오는 중…');}}
+  if(e.data===P.BUFFERING){setState('불러오는 중…');} }
 
 function finish(){ended=true;stopTick();
   if(mode==='yt'&&yt){try{yt.stopVideo();}catch(x){}}
@@ -152,8 +155,7 @@ function finish(){ended=true;stopTick();
   var b=$('bar');if(b)b.style.width='100%';}
 function hideDone(){var d=$('done');if(d)d.classList.remove('on');}
 
-function togglePlay(){
-  if(ended){restart();return;}
+function togglePlay(){ if(ended){restart();return;}
   if(mode==='mp3'){if(!au)return;if(au.paused)au.play();else au.pause();return;}
   if(!yt||!yt.getPlayerState)return;
   if(yt.getPlayerState()===YT.PlayerState.PLAYING)yt.pauseVideo();else yt.playVideo();}
@@ -180,15 +182,14 @@ function stopAll(){stopTick();
   if(yt&&yt.destroy){try{yt.destroy();}catch(x){}}yt=null;
   if(au){try{au.pause();}catch(x){}au=null;}}
 
-function route(){
-  var id=hashId();
-  if(id){var t=byId(id);
-    if(t){renderPlayer(t);return;}
+function route(){ var t=parseHash();
+  if(!t){renderLibrary();return;}
+  if(t.missing){
     app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>못 찾았어요</h1></div>'+
       '<div class="empty"><b>이 QR에 맞는 책이 없어요</b>어른에게 보여 주세요.</div>';
     $('home').onclick=function(){location.hash='';};return;}
-  renderLibrary();
-}
+  renderPlayer(t);}
+
 window.onYouTubeIframeAPIReady=function(){if(window.__pv){var v=window.__pv;window.__pv=null;buildYT(v);}};
 window.addEventListener('hashchange',route);
 fetch('tracks.json?v='+Date.now()).then(function(r){return r.ok?r.json():{tracks:[]};})
