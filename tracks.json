@@ -2,10 +2,16 @@
   "v": 1,
   "tracks": [
     {
-      "id": "aaa11",
-      "title": "첫 번째 책",
+      "id": "b001",
+      "title": "The Legend of Rock Paper Scissors",
       "vid": "B00LjLxtL8U",
-      "emoji": "📘"
+      "emoji": "✂️"
+    },
+    {
+      "id": "b002",
+      "title": "The Girl Who Makes A Million Mistakes",
+      "vid": "47VEBCl-jJA",
+      "emoji": "🎨"
     }
   ]
 }
