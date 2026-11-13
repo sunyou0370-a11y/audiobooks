@@ -27,6 +27,11 @@ background:var(--ink-2);color:var(--cream);font-size:22px;cursor:pointer}
 background:#000;box-shadow:0 14px 40px rgba(0,0,0,.45)}
 .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;background:transparent;cursor:pointer}
+.fsbtn{position:absolute;right:10px;top:10px;z-index:3;width:46px;height:46px;border:none;
+border-radius:15px;background:rgba(20,33,61,.7);color:var(--cream);font-size:20px;
+cursor:pointer;display:grid;place-items:center;line-height:1}
+.stage:fullscreen{aspect-ratio:auto;width:100%;height:100%;border-radius:0}
+.stage:-webkit-full-screen{aspect-ratio:auto;width:100%;height:100%;border-radius:0}
 .done{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
 justify-content:center;gap:12px;background:var(--ink-2);text-align:center;padding:16px}
 .done.on{display:flex}
@@ -149,7 +154,8 @@ function renderPlayer(p){
   app.innerHTML='<div class="bar"><button class="home" id="home">'+(back?'↩':'🏠')+
     '</button><h1>'+esc(head)+'</h1></div>'+
     '<div class="stage"><div id="yt"></div><div class="shield" id="shield"></div>'+
-    '<div class="done" id="done"><div class="tick">✓</div><p>다 봤어요!</p></div></div>'+
+    '<div class="done" id="done"><div class="tick">✓</div><p>다 봤어요!</p></div>'+
+    '<button class="fsbtn" id="fs">⛶</button></div>'+
     '<h2 class="title-big">'+esc(big)+'</h2><p class="sub" id="state">준비 중…</p>'+
     '<div class="prog"><i id="bar"></i></div>'+
     '<div class="times"><span id="now">0:00</span><span id="tot">0:00</span></div>'+
@@ -162,6 +168,7 @@ function renderPlayer(p){
   $('play').onclick=togglePlay; $('shield').onclick=togglePlay;
   $('bk').onclick=function(){seekBy(-15);}; $('fw').onclick=function(){seekBy(15);};
   $('again').onclick=restart;
+  $('fs').onclick=toggleFS; syncFS();
   window.scrollTo(0,0);
   buildYT(vid);
 }
@@ -171,6 +178,27 @@ function renderMissing(){
     '<div class="empty"><b>이 QR에 맞는 게 없어요</b>어른에게 보여 주세요.</div>';
   $('home').onclick=function(){location.hash='';};
 }
+
+function fsEl(){return document.fullscreenElement||document.webkitFullscreenElement||null;}
+function toggleFS(){
+  var st=document.querySelector('.stage'); if(!st) return;
+  try{
+    if(fsEl()){
+      var x=document.exitFullscreen||document.webkitExitFullscreen;
+      if(x){var q=x.call(document); if(q&&q.catch)q.catch(function(){});}
+    }else{
+      var r=st.requestFullscreen||st.webkitRequestFullscreen;
+      if(r){var p=r.call(st); if(p&&p.catch)p.catch(function(){});}
+    }
+  }catch(e){}
+}
+function exitFS(){ if(fsEl()){ try{
+    var x=document.exitFullscreen||document.webkitExitFullscreen;
+    if(x){var q=x.call(document); if(q&&q.catch)q.catch(function(){});}
+  }catch(e){} } }
+function syncFS(){var b=$('fs'); if(b)b.textContent=fsEl()?'✕':'⛶';}
+document.addEventListener('fullscreenchange',syncFS);
+document.addEventListener('webkitfullscreenchange',syncFS);
 
 function buildYT(vid){
   if(!window.YT||!window.YT.Player){window.__pv=vid;return;}
@@ -188,7 +216,7 @@ function onState(e){var P=window.YT.PlayerState;
     var o=$('tot');if(o)o.textContent=mmss(yt.getDuration());startTick();}
   if(e.data===P.PAUSED){setIcon('▶');setState('잠깐 멈춤');stopTick();}
   if(e.data===P.BUFFERING){setState('불러오는 중…');}}
-function finish(){ended=true;stopTick();
+function finish(){ended=true;stopTick();exitFS();
   if(yt){try{yt.stopVideo();}catch(x){}}
   var d=$('done');if(d)d.classList.add('on');
   setIcon('▶');setState('다 봤어요');
