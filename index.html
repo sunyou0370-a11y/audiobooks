@@ -27,9 +27,8 @@ background:var(--ink-2);color:var(--cream);font-size:22px;cursor:pointer}
 background:#000;box-shadow:0 14px 40px rgba(0,0,0,.45)}
 .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .shield{position:absolute;inset:0;background:transparent;cursor:pointer}
-.cover{display:grid;place-items:center;background:linear-gradient(140deg,var(--ink-2),var(--ink-3));font-size:84px}
 .done{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
-justify-content:center;gap:10px;background:var(--ink-2);text-align:center;padding:16px}
+justify-content:center;gap:12px;background:var(--ink-2);text-align:center;padding:16px}
 .done.on{display:flex}
 .done .tick{width:74px;height:74px;border-radius:50%;background:var(--mint);color:var(--ink);
 display:grid;place-items:center;font-size:40px;font-weight:900}
@@ -45,17 +44,29 @@ color:var(--cream-dim);font-variant-numeric:tabular-nums}
 .tbtn{border:none;background:var(--ink-2);color:var(--cream);border-radius:22px;width:68px;height:68px;
 font-size:13px;font-weight:700;cursor:pointer;display:grid;place-items:center;gap:2px;line-height:1.1}
 .tbtn span{display:block;font-size:21px}
-.tbtn:active,.card:active{transform:scale(.95)}
+.tbtn:active,.card:active,.ep:active{transform:scale(.95)}
 .play{width:104px;height:104px;border-radius:50%;background:var(--marigold);color:var(--ink);font-size:44px}
 .again{margin:26px auto 0;display:block;border:2px solid var(--ink-3);background:transparent;
 color:var(--cream-dim);border-radius:99px;padding:12px 26px;font-family:var(--fb);
 font-weight:700;font-size:15px;cursor:pointer}
+.sec{font-family:var(--fd);font-size:15px;color:var(--cream-dim);
+margin:26px 0 12px;letter-spacing:.02em}
+.sec:first-of-type{margin-top:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
 .card{display:flex;flex-direction:column;gap:10px;text-decoration:none;color:inherit;
 background:var(--ink-2);border-radius:20px;padding:16px;min-width:0}
 .card .chip{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;
 font-size:26px;background:var(--marigold)}
+.card.show .chip{background:var(--mint)}
 .card b{font-family:var(--fd);font-weight:400;font-size:16px;line-height:1.3;word-break:keep-all}
+.card .tag{font-size:12px;color:var(--cream-dim)}
+.eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.ep{display:block;text-decoration:none;color:inherit;background:var(--ink-2);
+border-radius:16px;overflow:hidden;min-width:0}
+.ep img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#0C1428}
+.ep .n{padding:9px 12px 2px;font-family:var(--fd);font-size:16px;color:var(--marigold)}
+.ep .t{padding:0 12px 11px;font-size:12.5px;line-height:1.35;color:var(--cream-dim);
+word-break:break-word}
 .empty{margin-top:40px;text-align:center;color:var(--cream-dim);line-height:1.7}
 .empty b{display:block;font-family:var(--fd);font-size:22px;color:var(--cream);margin-bottom:8px}
 .foot{margin-top:auto;padding-top:32px;text-align:center;color:#6B7899;font-size:12px}
@@ -69,132 +80,153 @@ font-size:26px;background:var(--marigold)}
 <script>
 (function(){
 "use strict";
-var app=document.getElementById('app'),TRACKS=[],yt=null,au=null,tick=null,ended=false,mode='';
+var app=document.getElementById('app'),BOOKS=[],yt=null,tick=null,ended=false;
+var SEASONS=[{"id":"sw8","title":"슈퍼윙스 시즌 8","emoji":"✈️","eps":[["YcFHrR2ROQs","오프닝","Opening Song"],["13EtRrMCo98","1화","Rocket Rollercoaster"],["oSOhB0x5okU","2화","Amazon Electric Adventure"],["bZnRN84neOs","3화","Robot Dog Romp"],["KdtJfE38qT4","4화","Big Baguette Bread Train"],["DcUOQJzhJyk","5화","Into the World of Dinosaurs"],["uGciYR14hEs","6화","Vang Vieng Vroom Vroom"],["-vdKMXaFJRA","7화","Stone Age Super Wings"],["a4NCYVrw9nQ","8화","The Sphinx Awakens"],["oeodj-vKNT0","9화","Dragon Dance Battle"],["ZsbPcYJ_oIQ","10화","Giant JETT"],["GL_IxAZsJmY","11화","The Amazing Hamster Race"],["Wd_AJd1lZNA","12화","The Himalayan Walking School"],["PX6-ED7aODo","13화","Bloom on the Moon"],["QVKN4YVw7DE","14화","Super Wings Check-up Day"],["zQef-1_bS0U","15화","Two Jetts Calamity"],["00UmqjBxtVM","16화","Dino-Riffic Day Out"],["L-eTwjFNoBU","17화","Super Space Food Truck"],["ztYTn7GwnRA","18화","Brazil Blackout"],["BiXJw_kCA44","19화","Giant Dragonfly Danger"],["Oj4LhuwkKy4","20화","Big Friendly Batsman"],["Uv2buKKNU2c","21화","Battle of the Builders"],["lhpFosLJHhE","22화","Frozen Fest Frenzy"],["J4CUpWMOK0Y","23화","Adventures in Knight Time"],["Vt8ayD6szIQ","24화","New Year's Eve Around the World (1)"],["QlkVfDmogPA","25화","New Year's Eve Around the World (2)"],["qWXn8jjp3XI","26화","Northern Magnetic Mayhem"],["TnrTWikmeHY","27화","Fantastic First Flight"],["EJ_zDProW-A","28화","Alice in Pixel-Land"],["t3cElSAxg68","29화","Metatron the City Guardian"],["wzhztmyxR44","30화","Super Space Scout Adventure (1)"],["ReUo-hkKzJs","31화","Super Space Scout Adventure (2)"],["bL8rTUTnfS0","32화","The Longest Train in the World"],["Bc7viR5-Mq0","33화","Hang Gliding with Pterosaurs"],["W7ok-4KKrGQ","34화","Mission In-Swappable"],["po-PomGQYoE","35화","The Epic Dinolympics"],["c3R_E9EnezU","36화","Babysitting Baby Nessies"],["_OuqCCtYZwk","37화","Guardians of the Sea"],["AfX7-2eSUXk","38화","Construction Crane Chaos"],["DrG-DyZq3hw","39화","Melbourne Tennis Madness"],["jy7XpApL9b4","40화","Voyager's Golden Record"]]},{"id":"sw9","title":"슈퍼윙스 시즌 9","emoji":"🚀","eps":[["wf8xpCBF2BU","오프닝","Opening Song"],["wMbCzqr5wx0","1화","Dino Egg Hunt Hoopla"],["8eCWpWA1_kQ","2화","Finding Fennec Foxes"],["FhrKr0MOqRU","3화","Jeju Giant's Deep Dive Odyssey"],["HScrQLwlOY8","4화","Roy the Space Train"],["3w4l7BeoTN8","5화","Flame Fighting Friends"],["1zo0tyBhLfs","6화","The Ultimate Bug Battle"],["8F25fm_br3E","7화","World's Biggest Bath Challenge"],["n2cSPsHc9I0","8화","Super Wingless"],["Wazq1xMm6qk","9화","Firefighters vs Police"],["zGLtL5-Y2-c","10화","Jett Meets the New Dino Wings"],["mtgOvGvzByA","11화","Jurassic Joy Dino Farm"],["zA8ylzPW4a4","12화","Deep Dive into Dinosaur"],["ul4mpWicM_o","13화","Invisible Trouble"],["P-mqeDGyhis","14화","Super Combo Bots in Action!"],["UoaOYBojvCo","15화","Stop the Space Monster (1)"],["xtbACUrhWpM","16화","Stop the Space Monster (2)"],["2cYRb9qmRb4","17화","Tanghulu Tangle Trouble"],["pcERmvOEEU0","18화","Dino Eggs Delivery Mission"],["cICq0rtmfAY","19화","Fearless Flight over Flood"],["OwcZR0cjQIs","20화","Dino Mama Drama"],["TEMOihpOnHQ","21화","Underground Ball Bandits"],["eG7tz3aGHow","22화","Princess Maribel's Castle-Warming Party"],["8utHWEgxSk8","23화","Moon Dust Busters"],["HNpKdHftVMo","24화","Monster Truck Desert Derby"],["B2cwAH7LvTM","25화","Red Riding Hood and the Golden Wolf"],["JJOT_sbu16c","26화","Mission Team Titans (1)"],["Jnh7VYfCGac","27화","Mission Team Titans (2)"],["upaypBoUMmI","28화","Fireworks Frenzy"],["MISHFxbNlGw","29화","Kings of the Ocean"],["de7OPndmOgA","30화","Jolly Madagascar Jungle Adventure"],["Rx-FRtbV_AM","31화","Kung Fu Kid"],["nHBoAPOwGb0","32화","Run, Reindeer Run!"],["yelQweiLnCo","33화","The Story of Jimbo's Wedding"],["774b7KJImdY","34화","Dino Plant Rampage"],["KeTgitPFTGs","35화","Bermuda Triangle Mystery"],["G17Fv5HZjvY","36화","The Fearless Elephant Force"],["_3tDdsadc6A","37화","The Little Pirate King of the Caribbean"],["-dOQNqFFN-E","38화","Monster Catch Match"],["kMwB9KFh-S4","39화","Wand-erful Magic Festival"],["eygwb-5dK0w","40화","Rainbow Rock Hunt"]]}];
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
 return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function mmss(t){t=Math.max(0,Math.floor(t||0));var m=Math.floor(t/60),s=t%60;return m+':'+(s<10?'0':'')+s;}
-function byId(id){for(var i=0;i<TRACKS.length;i++)if(TRACKS[i].id===id)return TRACKS[i];return null;}
+function mmss(t){t=Math.max(0,Math.floor(t||0));var m=Math.floor(t/60),s=t%60;
+return m+':'+(s<10?'0':'')+s;}
 function $(i){return document.getElementById(i);}
+function book(id){for(var i=0;i<BOOKS.length;i++)if(BOOKS[i].id===id)return BOOKS[i];return null;}
+function season(id){for(var i=0;i<SEASONS.length;i++)if(SEASONS[i].id===id)return SEASONS[i];return null;}
 
 function parseHash(){
-  var h=(location.hash||'').replace(/^#/,''); if(!h) return null;
-  var out={}; h.split('&').forEach(function(p){
+  var h=(location.hash||'').replace(/^#/,''); if(!h) return {kind:'home'};
+  var o={}; h.split('&').forEach(function(p){
     var k=p.split('='); if(k.length<2) return;
-    try{out[k[0]]=decodeURIComponent(k.slice(1).join('='));}catch(e){out[k[0]]=k.slice(1).join('=');}});
-  if(out.v&&/^[A-Za-z0-9_-]{11}$/.test(out.v))
-    return {id:'v-'+out.v,title:out.n||'책',vid:out.v,emoji:out.e||'📘'};
-  if(out.t) return byId(out.t)||{missing:true};
-  var m=h.match(/^t=([A-Za-z0-9_-]+)$/); if(m) return byId(m[1])||{missing:true};
-  return {missing:true};
+    try{o[k[0]]=decodeURIComponent(k.slice(1).join('='));}catch(e){o[k[0]]=k.slice(1).join('=');}});
+  if(o.s){
+    var s=season(o.s); if(!s) return {kind:'missing'};
+    var i=(o.i==null?null:parseInt(o.i,10));
+    if(i==null||isNaN(i)||!s.eps[i]) return {kind:'season',s:s};
+    return {kind:'play',s:s,i:i};
+  }
+  if(o.v&&/^[A-Za-z0-9_-]{11}$/.test(o.v))
+    return {kind:'play',one:{title:o.n||'책',vid:o.v,emoji:o.e||'📘'}};
+  var id=o.t||(h.match(/^t=([A-Za-z0-9_-]+)$/)||[])[1];
+  if(id){var b=book(id); return b?{kind:'play',one:b}:{kind:'missing'};}
+  return {kind:'missing'};
 }
 
-function renderLibrary(){ stopAll();
-  var items=TRACKS.map(function(t){
-    return '<a class="card" href="#t='+esc(t.id)+'"><span class="chip">'+esc(t.emoji||'📘')+
-           '</span><b>'+esc(t.title)+'</b></a>';}).join('');
-  app.innerHTML='<div class="bar"><h1>우리집 오디오 책장</h1></div>'+
-    (TRACKS.length?'<div class="grid">'+items+'</div>':
-     '<div class="empty"><b>아직 책이 없어요</b>QR을 찍으면 바로 들을 수 있어요.</div>')+
-    '<div class="foot">QR을 찍으면 그 책 하나만 들려요</div>'; }
+function renderHome(){
+  stopAll();
+  var sh=SEASONS.map(function(s){
+    return '<a class="card show" href="#s='+esc(s.id)+'"><span class="chip">'+
+      esc(s.emoji||'📺')+'</span><b>'+esc(s.title)+'</b>'+
+      '<span class="tag">'+s.eps.length+'편 · 차례대로</span></a>';}).join('');
+  var bk=BOOKS.map(function(b){
+    return '<a class="card" href="#t='+esc(b.id)+'"><span class="chip">'+
+      esc(b.emoji||'📘')+'</span><b>'+esc(b.title)+'</b></a>';}).join('');
+  var html='<div class="bar"><h1>우리집 오디오 책장</h1></div>';
+  if(SEASONS.length) html+='<p class="sec">📺 영상</p><div class="grid">'+sh+'</div>';
+  if(BOOKS.length)   html+='<p class="sec">📚 책</p><div class="grid">'+bk+'</div>';
+  if(!SEASONS.length&&!BOOKS.length)
+    html+='<div class="empty"><b>아직 아무것도 없어요</b>QR을 찍으면 바로 들을 수 있어요.</div>';
+  app.innerHTML=html+'<div class="foot">하나를 고르면 그것만 나와요</div>';
+}
 
-function renderPlayer(t){
-  ended=false; mode=t.file?'mp3':'yt';
-  var stage = mode==='mp3'
-    ? '<div class="stage"><div class="cover" style="position:absolute;inset:0">'+esc(t.emoji||'🎧')+
-      '</div><div class="done" id="done"><div class="tick">✓</div><p>다 들었어요!</p></div></div>'
-    : '<div class="stage"><div id="yt"></div><div class="shield" id="shield"></div>'+
-      '<div class="done" id="done"><div class="tick">✓</div><p>다 들었어요!</p></div></div>';
+function renderSeason(s){
+  stopAll();
   app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>'+
-    esc(t.emoji||'📘')+' 듣는 중</h1></div>'+stage+
-    '<h2 class="title-big">'+esc(t.title)+'</h2><p class="sub" id="state">준비 중…</p>'+
+    esc(s.emoji||'📺')+' '+esc(s.title)+'</h1></div>'+
+    '<div class="eps">'+s.eps.map(function(e,i){
+      return '<a class="ep" href="#s='+esc(s.id)+'&i='+i+'">'+
+        '<img loading="lazy" src="https://i.ytimg.com/vi/'+esc(e[0])+'/mqdefault.jpg" alt="">'+
+        '<div class="n">'+esc(e[1])+'</div><div class="t">'+esc(e[2])+'</div></a>';
+    }).join('')+'</div>'+
+    '<div class="foot">하나를 고르면 그것만 나와요</div>';
+  $('home').onclick=function(){location.hash='';};
+  window.scrollTo(0,0);
+}
+
+function renderPlayer(p){
+  stopAll(); ended=false;
+  var head,big,back;
+  if(p.one){ head=(p.one.emoji||'📘')+' 보는 중'; big=p.one.title; back=''; }
+  else{ head=(p.s.emoji||'📺')+' '+p.s.title+' · '+p.s.eps[p.i][1];
+        big=p.s.eps[p.i][2]; back='#s='+p.s.id; }
+  var vid=p.one?p.one.vid:p.s.eps[p.i][0];
+  app.innerHTML='<div class="bar"><button class="home" id="home">'+(back?'↩':'🏠')+
+    '</button><h1>'+esc(head)+'</h1></div>'+
+    '<div class="stage"><div id="yt"></div><div class="shield" id="shield"></div>'+
+    '<div class="done" id="done"><div class="tick">✓</div><p>다 봤어요!</p></div></div>'+
+    '<h2 class="title-big">'+esc(big)+'</h2><p class="sub" id="state">준비 중…</p>'+
     '<div class="prog"><i id="bar"></i></div>'+
     '<div class="times"><span id="now">0:00</span><span id="tot">0:00</span></div>'+
-    '<div class="transport"><button class="tbtn" id="back"><span>↺</span>15초</button>'+
+    '<div class="transport"><button class="tbtn" id="bk"><span>↺</span>15초</button>'+
     '<button class="play" id="play">▶</button>'+
-    '<button class="tbtn" id="fwd"><span>↻</span>15초</button></div>'+
-    '<button class="again" id="again">처음부터 다시 듣기</button>'+
+    '<button class="tbtn" id="fw"><span>↻</span>15초</button></div>'+
+    '<button class="again" id="again">처음부터 다시 보기</button>'+
     '<div class="foot">끝나면 저절로 멈춰요</div>';
-  $('home').onclick=function(){location.hash='';};
-  $('play').onclick=togglePlay;
-  if($('shield'))$('shield').onclick=togglePlay;
-  $('back').onclick=function(){seekBy(-15);};
-  $('fwd').onclick=function(){seekBy(15);};
+  $('home').onclick=function(){location.hash=back.replace(/^#/,'');};
+  $('play').onclick=togglePlay; $('shield').onclick=togglePlay;
+  $('bk').onclick=function(){seekBy(-15);}; $('fw').onclick=function(){seekBy(15);};
   $('again').onclick=restart;
-  if(mode==='mp3')buildAudio(t.file); else buildYT(t.vid);
+  window.scrollTo(0,0);
+  buildYT(vid);
+}
+function renderMissing(){
+  stopAll();
+  app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>못 찾았어요</h1></div>'+
+    '<div class="empty"><b>이 QR에 맞는 게 없어요</b>어른에게 보여 주세요.</div>';
+  $('home').onclick=function(){location.hash='';};
 }
 
-function buildAudio(src){ stopAll(); au=new Audio(src); au.preload='metadata';
-  au.addEventListener('loadedmetadata',function(){setState('눌러서 들어요');
-    var o=$('tot');if(o)o.textContent=mmss(au.duration);});
-  au.addEventListener('playing',function(){ended=false;hideDone();setIcon('❚❚');setState('재생 중');startTick();});
-  au.addEventListener('pause',function(){if(!ended){setIcon('▶');setState('잠깐 멈춤');}stopTick();});
-  au.addEventListener('waiting',function(){setState('불러오는 중…');});
-  au.addEventListener('ended',finish);
-  au.addEventListener('error',function(){setState('이 음원을 찾을 수 없어요');}); }
-
-function buildYT(vid){ stopAll();
+function buildYT(vid){
   if(!window.YT||!window.YT.Player){window.__pv=vid;return;}
   yt=new YT.Player('yt',{videoId:vid,
-    playerVars:{rel:0,modestbranding:1,playsinline:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,autoplay:0},
-    events:{onReady:function(){setState('눌러서 들어요');
+    playerVars:{rel:0,modestbranding:1,playsinline:1,controls:0,disablekb:1,
+                fs:0,iv_load_policy:3,autoplay:0},
+    events:{onReady:function(){setState('눌러서 보세요');
       var o=$('tot');if(o)o.textContent=mmss(yt.getDuration());},
-      onStateChange:onState,onError:function(){setState('이 음원은 지금 들을 수 없어요');}}}); }
-
+      onStateChange:onState,
+      onError:function(){setState('지금은 볼 수 없어요');}}});
+}
 function onState(e){var P=window.YT.PlayerState;
   if(e.data===P.ENDED){finish();return;}
-  if(e.data===P.PLAYING){ended=false;hideDone();setIcon('❚❚');setState('재생 중');
+  if(e.data===P.PLAYING){ended=false;hideDone();setIcon('❚❚');setState('보는 중');
     var o=$('tot');if(o)o.textContent=mmss(yt.getDuration());startTick();}
   if(e.data===P.PAUSED){setIcon('▶');setState('잠깐 멈춤');stopTick();}
-  if(e.data===P.BUFFERING){setState('불러오는 중…');} }
-
+  if(e.data===P.BUFFERING){setState('불러오는 중…');}}
 function finish(){ended=true;stopTick();
-  if(mode==='yt'&&yt){try{yt.stopVideo();}catch(x){}}
-  if(mode==='mp3'&&au){try{au.pause();}catch(x){}}
+  if(yt){try{yt.stopVideo();}catch(x){}}
   var d=$('done');if(d)d.classList.add('on');
-  setIcon('▶');setState('다 들었어요');
+  setIcon('▶');setState('다 봤어요');
   var b=$('bar');if(b)b.style.width='100%';}
 function hideDone(){var d=$('done');if(d)d.classList.remove('on');}
-
-function togglePlay(){ if(ended){restart();return;}
-  if(mode==='mp3'){if(!au)return;if(au.paused)au.play();else au.pause();return;}
+function togglePlay(){if(ended){restart();return;}
   if(!yt||!yt.getPlayerState)return;
   if(yt.getPlayerState()===YT.PlayerState.PLAYING)yt.pauseVideo();else yt.playVideo();}
 function restart(){ended=false;hideDone();
-  if(mode==='mp3'&&au){au.currentTime=0;au.play();return;}
   if(yt){try{yt.seekTo(0,true);yt.playVideo();}catch(x){}}}
-function seekBy(s){if(ended)return;
-  if(mode==='mp3'&&au){au.currentTime=Math.max(0,au.currentTime+s);return;}
-  if(yt&&yt.getCurrentTime)yt.seekTo(Math.max(0,yt.getCurrentTime()+s),true);}
-
+function seekBy(s){if(ended||!yt||!yt.getCurrentTime)return;
+  yt.seekTo(Math.max(0,yt.getCurrentTime()+s),true);}
 function setIcon(c){var b=$('play');if(b)b.textContent=c;}
 function setState(t){var s=$('state');if(s)s.textContent=t;}
 function startTick(){stopTick();tick=setInterval(function(){
-  var c=0,d=0;
-  if(mode==='mp3'&&au){c=au.currentTime;d=au.duration||0;}
-  else if(yt&&yt.getCurrentTime){c=yt.getCurrentTime();d=yt.getDuration()||0;}
-  else return;
+  if(!yt||!yt.getCurrentTime)return;
+  var c=yt.getCurrentTime(),d=yt.getDuration()||0;
   var b=$('bar'),n=$('now');
   if(b&&d)b.style.width=Math.min(100,(c/d)*100)+'%';
   if(n)n.textContent=mmss(c);
   if(d&&c>=d-0.4&&!ended)finish();},500);}
 function stopTick(){if(tick){clearInterval(tick);tick=null;}}
 function stopAll(){stopTick();
-  if(yt&&yt.destroy){try{yt.destroy();}catch(x){}}yt=null;
-  if(au){try{au.pause();}catch(x){}au=null;}}
+  if(yt&&yt.destroy){try{yt.destroy();}catch(x){}}yt=null;}
 
-function route(){ var t=parseHash();
-  if(!t){renderLibrary();return;}
-  if(t.missing){
-    app.innerHTML='<div class="bar"><button class="home" id="home">🏠</button><h1>못 찾았어요</h1></div>'+
-      '<div class="empty"><b>이 QR에 맞는 책이 없어요</b>어른에게 보여 주세요.</div>';
-    $('home').onclick=function(){location.hash='';};return;}
-  renderPlayer(t);}
-
-window.onYouTubeIframeAPIReady=function(){if(window.__pv){var v=window.__pv;window.__pv=null;buildYT(v);}};
+function route(){
+  var r=parseHash();
+  if(r.kind==='home')   return renderHome();
+  if(r.kind==='season') return renderSeason(r.s);
+  if(r.kind==='play')   return renderPlayer(r);
+  renderMissing();
+}
+window.onYouTubeIframeAPIReady=function(){
+  if(window.__pv){var v=window.__pv;window.__pv=null;buildYT(v);}};
 window.addEventListener('hashchange',route);
-fetch('tracks.json?v='+Date.now()).then(function(r){return r.ok?r.json():{tracks:[]};})
-  .then(function(d){TRACKS=(d&&d.tracks)||[];route();})
-  .catch(function(){TRACKS=[];route();});
+fetch('tracks.json?v='+Date.now()).then(function(r){return r.ok?r.json():{};})
+  .then(function(d){BOOKS=(d&&d.tracks)||[];route();})
+  .catch(function(){route();});
 })();
 </script>
 </body>
